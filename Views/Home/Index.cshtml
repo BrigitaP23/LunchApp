@@ -1,0 +1,47 @@
+﻿@{
+    ViewBag.Title = "Domov";
+}
+
+<div class="row justify-content-center">
+    <div class="col-md-6">
+        <div class="card shadow-sm mb-3">
+            <div class="card-body text-center">
+                <h2 class="card-title mb-3">Dobrodošli, @ViewBag.Username!</h2>
+                <p class="mb-0">Tu se lahko prijavite ali odjavite od kosila.</p>
+            </div>
+        </div>
+
+        <p class="text-end mb-3">
+            <a href="/Home/MySignups" class="btn btn-info btn-sm">Pregled mojih prijav</a>
+        </p>
+
+        <div class="card shadow-sm mb-3">
+            <div class="card-body">
+                <h5>Prijava kosila</h5>
+                <form method="post" action="/Home/Signup">
+                    <div class="mb-3">
+                        <input type="date" name="date" class="form-control" required />
+                    </div>
+                    <button type="submit" class="btn btn-primary w-100">Prijavi se</button>
+                </form>
+            </div>
+        </div>
+
+        <div class="card shadow-sm mb-3">
+            <div class="card-body">
+                <h5>Odjava kosila</h5>
+                <form method="post" action="/Home/Unsignup">
+                    <div class="mb-3">
+                        <input type="date" name="date" class="form-control" required />
+                    </div>
+                    <button type="submit" class="btn btn-danger w-100">Odjavi se</button>
+                </form>
+            </div>
+        </div>
+
+        @if (ViewBag.Message != null)
+        {
+            <div class="alert alert-success text-center">@ViewBag.Message</div>
+        }
+    </div>
+</div>

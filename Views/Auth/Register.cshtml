@@ -1,0 +1,52 @@
+﻿@{
+    ViewBag.Title = "Registracija";
+}
+
+<div class="row justify-content-center">
+    <div class="col-md-5">
+        <div class="card shadow-sm">
+            <div class="card-body">
+                <h3 class="card-title mb-4 text-center">Registracija</h3>
+
+                @if (ViewBag.Error != null)
+                {
+                    <div class="alert alert-danger">@ViewBag.Error</div>
+                }
+
+                <form method="post">
+                    <div class="mb-3">
+                        <label>Ime</label>
+                        <input type="text" name="firstName" id="firstName" class="form-control" required
+                               oninput="updateUsername()" />
+                    </div>
+                    <div class="mb-3">
+                        <label>Priimek</label>
+                        <input type="text" name="lastName" id="lastName" class="form-control" required
+                               oninput="updateUsername()" />
+                    </div>
+                    <div class="mb-3">
+                        <label>Uporabniško ime</label>
+                        <input type="text" id="username" class="form-control" readonly />
+                    </div>
+                    <div class="mb-3">
+                        <label>Geslo</label>
+                        <input type="password" name="password" class="form-control" required />
+                    </div>
+                    <button type="submit" class="btn btn-success w-100">Registracija</button>
+                </form>
+
+                <p class="mt-3 text-center">
+                    Že imate račun? <a href="/Auth/Login">Prijava</a>
+                </p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    function updateUsername() {
+        var first = document.getElementById('firstName').value.toLowerCase();
+        var last = document.getElementById('lastName').value.toLowerCase();
+        document.getElementById('username').value = first && last ? first + '.' + last : '';
+    }
+</script>

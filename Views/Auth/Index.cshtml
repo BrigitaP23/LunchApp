@@ -1,0 +1,15 @@
+﻿<h2>Prijava / Odjava kosila</h2>
+
+<form method="post" action="/Home/Signup">
+    <input type="date" name="date" />
+    <button type="submit">Prijavi se</button>
+</form>
+
+<form method="post" action="/Home/Unsignup">
+    <input type="date" name="date" />
+    <button type="submit">Odjavi se</button>
+</form>
+
+<p>@ViewBag.Message</p>
+
+<a href="/Auth/Logout">Odjava</a>
