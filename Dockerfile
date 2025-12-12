@@ -1,21 +1,21 @@
-# 1. Base image za build
+﻿# 1️⃣ Build stage
 FROM mcr.microsoft.com/dotnet/sdk:8.0 AS build
 WORKDIR /app
 
-# Kopiramo samo mapo projekta (kjer je LunchApp.csproj)
-COPY LunchApp/ ./LunchApp/
+# Kopiramo vse datoteke iz repozitorija
+COPY . .
 
-# Publish projekta
-RUN dotnet publish ./LunchApp/LunchApp.csproj -c Release -o /app/publish
+# Publish aplikacijo v Release
+RUN dotnet publish ./LunchApp.csproj -c Release -o /app/publish
 
-# 2. Runtime image
+# 2️⃣ Runtime stage
 FROM mcr.microsoft.com/dotnet/aspnet:8.0
 WORKDIR /app
 
-# Kopiramo rezultat builda
+# Kopiramo rezultat builda iz prejšnje faze
 COPY --from=build /app/publish .
 
-# Nastavimo port
+# Nastavimo port za Render
 ENV ASPNETCORE_URLS=http://+:10000
 EXPOSE 10000
 
