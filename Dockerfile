@@ -12,6 +12,9 @@ RUN dotnet publish ./LunchApp.csproj -c Release -o /app/publish
 FROM mcr.microsoft.com/dotnet/aspnet:8.0
 WORKDIR /app
 
+# Ustvari mapo za Data Protection ključe
+RUN mkdir -p /app/keys
+
 # Kopiramo rezultat builda iz prejšnje faze
 COPY --from=build /app/publish .
 

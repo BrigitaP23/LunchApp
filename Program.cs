@@ -1,6 +1,8 @@
 ﻿using LunchApp.Data;
 using LunchApp.Services;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.AspNetCore.DataProtection;
+using System.IO;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -15,12 +17,16 @@ builder.Services.AddSession(options =>
     options.Cookie.IsEssential = true;
 });
 
+// Data Protection – shrani ključe za session, da deluje tudi po redeployu
+builder.Services.AddDataProtection()
+    .PersistKeysToFileSystem(new DirectoryInfo(@"/app/keys")) // Docker / Render mapa
+    .SetApplicationName("LunchApp");
+
 // SQLite DbContext
 builder.Services.AddDbContext<AppDbContext>(options =>
     options.UseSqlite("Data Source=lunchapp.db"));
 
-// (ZA KASNEJE – ko boš spet dodajala email)
-// builder.Services.AddHostedService<DailyReportService>();
+// Servisi
 builder.Services.AddSingleton<EmailService>();
 builder.Services.AddHostedService<DailyReportService>();
 
@@ -37,17 +43,25 @@ app.UseHttpsRedirection();
 app.UseStaticFiles();
 app.UseRouting();
 
-app.UseSession();      // ⚠️ mora biti PRED Authorization
+app.UseSession();      // ⚠️ PRED Authorization
 app.UseAuthorization();
 
 // Default route
 app.MapControllerRoute(
     name: "default",
     pattern: "{controller=Auth}/{action=Login}/{id?}");
+
+// Ustvari DB ob zagonu
 using (var scope = app.Services.CreateScope())
 {
     var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
     db.Database.EnsureCreated();
+}
+
+// Za Docker / Render: poskrbi, da mapa za ključe obstaja
+if (!Directory.Exists("/app/keys"))
+{
+    Directory.CreateDirectory("/app/keys");
 }
 
 app.Run();
