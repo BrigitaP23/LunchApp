@@ -8,25 +8,13 @@ namespace LunchApp.Controllers
     public class AuthController : Controller
     {
         private readonly AppDbContext _db;
+        public AuthController(AppDbContext db) => _db = db;
 
-        public AuthController(AppDbContext db)
-        {
-            _db = db;
-        }
-
-        // GET: /Auth/Login
         public IActionResult Login() => View();
 
-        // POST: /Auth/Login
         [HttpPost]
         public IActionResult Login(string username, string password)
         {
-            if (string.IsNullOrEmpty(username) || string.IsNullOrEmpty(password))
-            {
-                ViewBag.Error = "Vsa polja so obvezna!";
-                return View();
-            }
-
             var user = _db.Users.FirstOrDefault(u => u.Username == username && u.Password == password);
             if (user == null)
             {
@@ -34,15 +22,12 @@ namespace LunchApp.Controllers
                 return View();
             }
 
-            // Shrani uporabniško ime v session
             HttpContext.Session.SetString("user", username);
             return RedirectToAction("Index", "Home");
         }
 
-        // GET: /Auth/Register
         public IActionResult Register() => View();
 
-        // POST: /Auth/Register
         [HttpPost]
         public IActionResult Register(string firstName, string lastName, string password)
         {
@@ -52,21 +37,18 @@ namespace LunchApp.Controllers
                 return View();
             }
 
-            // Sestavi uporabniško ime: ime.priimek
-            string username = $"{firstName.Trim().ToLower()}.{lastName.Trim().ToLower()}";
+            string username = $"{firstName.ToLower()}.{lastName.ToLower()}";
 
-            // Preveri, če uporabnik že obstaja
             if (_db.Users.Any(u => u.Username == username))
             {
                 ViewBag.Error = "Uporabnik s tem imenom že obstaja!";
                 return View();
             }
 
-            // Ustvari novega uporabnika
             var user = new User
             {
-                FirstName = firstName.Trim(),
-                LastName = lastName.Trim(),
+                FirstName = firstName,
+                LastName = lastName,
                 Username = username,
                 Password = password
             };
@@ -74,11 +56,10 @@ namespace LunchApp.Controllers
             _db.Users.Add(user);
             _db.SaveChanges();
 
-            // Po registraciji uporabnika preusmeri na Login (ni samodejne prijave)
-            return RedirectToAction("Login");
+            HttpContext.Session.SetString("user", username);
+            return RedirectToAction("Index", "Home");
         }
 
-        // Odjava
         public IActionResult Logout()
         {
             HttpContext.Session.Remove("user");
