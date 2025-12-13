@@ -1,0 +1,39 @@
+﻿@model List<LunchApp.Models.User>
+
+<h2>Admin pregled uporabnikov</h2>
+
+<table border="1" cellpadding="5" cellspacing="0">
+    <thead>
+        <tr>
+            <th>Ime</th>
+            <th>Priimek</th>
+            <th>Uporabniško ime</th>
+            <th>Prijave/Odjave</th>
+        </tr>
+    </thead>
+    <tbody>
+        @foreach (var user in Model)
+        {
+            <tr>
+                <td>@user.FirstName</td>
+                <td>@user.LastName</td>
+                <td>@user.Username</td>
+                <td>
+                    @if (user.MealSignups != null && user.MealSignups.Any())
+                    {
+                        <ul>
+                            @foreach (var m in user.MealSignups.OrderBy(ms => ms.Date))
+                            {
+                                <li>@m.Date.ToString("dd.MM.yyyy") - @(m.SignedUp ? "PRIJAVLJEN" : "ODJAVLJEN")</li>
+                            }
+                        </ul>
+                    }
+                    else
+                    {
+                        <em>Brez prijav/odjav</em>
+                    }
+                </td>
+            </tr>
+        }
+    </tbody>
+</table>
