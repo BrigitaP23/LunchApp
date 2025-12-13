@@ -8,7 +8,7 @@ namespace LunchApp.Services
         public void Send(string subject, string body, string attachmentPath)
         {
             var message = new MailMessage();
-            message.From = new MailAddress("TVOJMAIL@gmail.com");
+            message.From = new MailAddress("brigitapertovt@gmail.com");
             message.To.Add("brigitapertovt@gmail.com");
             message.Subject = subject;
             message.Body = body;
