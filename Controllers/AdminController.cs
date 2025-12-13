@@ -1,6 +1,8 @@
 ﻿using LunchApp.Data;
+using LunchApp.Models;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using System.Linq;
 
 namespace LunchApp.Controllers
 {
@@ -13,8 +15,10 @@ namespace LunchApp.Controllers
             _db = db;
         }
 
+        // GET: /Admin
         public IActionResult Index()
         {
+            // 🔹 Naložimo vse uporabnike skupaj z njihovimi MealSignups
             var users = _db.Users
                 .Include(u => u.MealSignups)
                 .OrderBy(u => u.LastName)
