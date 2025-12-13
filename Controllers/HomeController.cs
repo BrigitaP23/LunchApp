@@ -1,81 +1,66 @@
-using Microsoft.AspNetCore.Mvc;
-using LunchApp.Services;
+using LunchApp.Data;
 using LunchApp.Models;
+using Microsoft.AspNetCore.Mvc;
+using System.Linq;
 
-namespace LunchApp.Controllers
+public class HomeController : Controller
 {
-    public class HomeController : Controller
+    private readonly AppDbContext _db;
+    public HomeController(AppDbContext db) => _db = db;
+
+    public IActionResult Index()
     {
-        private readonly FileService fileService = new();
+        var user = HttpContext.Session.GetString("user");
+        if (string.IsNullOrEmpty(user)) return RedirectToAction("Login", "Auth");
 
-        public IActionResult Index()
+        ViewBag.Username = user;
+        return View();
+    }
+
+    [HttpPost]
+    public IActionResult Signup(DateTime date)
+    {
+        string user = HttpContext.Session.GetString("user");
+        if (date < DateTime.Today || (date == DateTime.Today && DateTime.Now.Hour >= 8))
         {
-            var user = HttpContext.Session.GetString("user");
-            if (string.IsNullOrEmpty(user)) return RedirectToAction("Login", "Auth");
-
-            ViewBag.Username = user;
-            return View();
-        }
-
-        [HttpPost]
-        public IActionResult Signup(DateTime date)
-        {
-            string user = HttpContext.Session.GetString("user");
-            if (string.IsNullOrEmpty(user)) return RedirectToAction("Login", "Auth");
-
-            if (date < DateTime.Today || (date == DateTime.Today && DateTime.Now.Hour >= 8))
-            {
-                ViewBag.Message = "Prijave so mogoèe samo za današnji dan do 8:00 ali za prihodnje dni.";
-                ViewBag.Username = user;
-                return View("Index");
-            }
-
-            var signups = fileService.LoadSignups();
-            var record = signups.FirstOrDefault(s => s.Username == user && s.Date == date);
-            if (record == null) signups.Add(new MealSignup { Username = user, Date = date, SignedUp = true });
-            else record.SignedUp = true;
-            fileService.SaveSignups(signups);
-
-            ViewBag.Message = "Uspešno prijavljen!";
-            ViewBag.Username = user;
+            ViewBag.Message = "Prijave so možne samo za prihodnje dni ali danes do 8:00!";
             return View("Index");
         }
 
-        [HttpPost]
-        public IActionResult Unsignup(DateTime date)
+        var record = _db.MealSignups.FirstOrDefault(s => s.Username == user && s.Date == date);
+        if (record == null) _db.MealSignups.Add(new MealSignup { Username = user, Date = date, SignedUp = true });
+        else record.SignedUp = true;
+        _db.SaveChanges();
+
+        ViewBag.Message = "Uspešno prijavljen!";
+        return View("Index");
+    }
+
+    [HttpPost]
+    public IActionResult Unsignup(DateTime date)
+    {
+        string user = HttpContext.Session.GetString("user");
+        if (date < DateTime.Today || (date == DateTime.Today && DateTime.Now.Hour >= 8))
         {
-            string user = HttpContext.Session.GetString("user");
-            if (string.IsNullOrEmpty(user)) return RedirectToAction("Login", "Auth");
-
-            if (date < DateTime.Today || (date == DateTime.Today && DateTime.Now.Hour >= 8))
-            {
-                ViewBag.Message = "Odjave so mogoèe samo za današnji dan do 8:00 ali za prihodnje dni.";
-                ViewBag.Username = user;
-                return View("Index");
-            }
-
-            var signups = fileService.LoadSignups();
-            var record = signups.FirstOrDefault(s => s.Username == user && s.Date == date);
-            if (record == null) signups.Add(new MealSignup { Username = user, Date = date, SignedUp = false });
-            else record.SignedUp = false;
-            fileService.SaveSignups(signups);
-
-            ViewBag.Message = "Uspešno odjavljen!";
-            ViewBag.Username = user;
+            ViewBag.Message = "Odjave so možne samo za prihodnje dni ali danes do 8:00!";
             return View("Index");
         }
 
-        public IActionResult MySignups()
-        {
-            string user = HttpContext.Session.GetString("user");
-            if (string.IsNullOrEmpty(user)) return RedirectToAction("Login", "Auth");
+        var record = _db.MealSignups.FirstOrDefault(s => s.Username == user && s.Date == date);
+        if (record == null) _db.MealSignups.Add(new MealSignup { Username = user, Date = date, SignedUp = false });
+        else record.SignedUp = false;
+        _db.SaveChanges();
 
-            var signups = fileService.LoadSignups()
-                .Where(s => s.Username == user)
-                .OrderBy(s => s.Date)
-                .ToList();
+        ViewBag.Message = "Uspešno odjavljen!";
+        return View("Index");
+    }
 
-            return View(signups);
-        }
+    public IActionResult MySignups()
+    {
+        string user = HttpContext.Session.GetString("user");
+        if (string.IsNullOrEmpty(user)) return RedirectToAction("Login", "Auth");
+
+        var signups = _db.MealSignups.Where(s => s.Username == user).OrderBy(s => s.Date).ToList();
+        return View(signups);
     }
 }
