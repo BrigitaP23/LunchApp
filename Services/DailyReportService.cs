@@ -17,30 +17,14 @@ namespace LunchApp.Services
 
         protected override async Task ExecuteAsync(CancellationToken stoppingToken)
         {
-            // Preberi environment variable za testni način
-            bool testMode = Environment.GetEnvironmentVariable("TEST_EMAIL_MODE") == "true";
-
             while (!stoppingToken.IsCancellationRequested)
             {
                 var now = DateTime.Now;
 
-                if (testMode)
+                if (now.Hour == 8 && now.Minute == 1 && _lastSent.Date != now.Date)
                 {
-                    // ✅ Test: pošlje ob zagonu (enkrat na dan)
-                    if (_lastSent.Date != now.Date)
-                    {
-                        await SendReport();
-                        _lastSent = now;
-                    }
-                }
-                else
-                {
-                    // ✅ Produkcija: pošlje ob 8:01
-                    if (now.Hour == 8 && now.Minute == 1 && _lastSent.Date != now.Date)
-                    {
-                        await SendReport();
-                        _lastSent = now;
-                    }
+                    await SendReport();
+                    _lastSent = now;
                 }
 
                 await Task.Delay(TimeSpan.FromMinutes(1), stoppingToken);
@@ -56,16 +40,17 @@ namespace LunchApp.Services
             var today = DateTime.Today;
 
             var data = await db.MealSignups
-                .Where(x => x.Date == today)
-                .ToListAsync();
+     .Include(ms => ms.User) // 🔹 naloži uporabnika
+     .Where(x => x.Date == today)
+     .ToListAsync();
 
             var sb = new StringBuilder();
             sb.AppendLine("Ime;Priimek;Uporabniško ime;Status");
 
             foreach (var s in data)
             {
-                var user = db.Users.First(u => u.Username == s.Username);
-                sb.AppendLine($"{user.FirstName};{user.LastName};{s.Username};{(s.SignedUp ? "PRIJAVLJEN" : "ODJAVLJEN")}");
+                var user = s.User; // 🔹 dostop do uporabnika preko navigacijske lastnosti
+                sb.AppendLine($"{user.FirstName};{user.LastName};{user.Username};{(s.SignedUp ? "PRIJAVLJEN" : "ODJAVLJEN")}");
             }
 
             var path = "/app/daily_report.csv";

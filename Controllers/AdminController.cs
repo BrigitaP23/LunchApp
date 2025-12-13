@@ -13,12 +13,10 @@ namespace LunchApp.Controllers
             _db = db;
         }
 
-        // GET: /Admin
         public IActionResult Index()
         {
-            // Naložimo vse uporabnike z njihovimi prijavami/odjavami
             var users = _db.Users
-                .Include(u => u.MealSignups)  // <-- popravljen property
+                .Include(u => u.MealSignups)
                 .OrderBy(u => u.LastName)
                 .ThenBy(u => u.FirstName)
                 .ToList();

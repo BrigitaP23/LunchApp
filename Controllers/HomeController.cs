@@ -1,6 +1,7 @@
 using LunchApp.Data;
 using LunchApp.Models;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 using System.Linq;
 
 public class HomeController : Controller
@@ -10,28 +11,39 @@ public class HomeController : Controller
 
     public IActionResult Index()
     {
-        var user = HttpContext.Session.GetString("user");
-        if (string.IsNullOrEmpty(user)) return RedirectToAction("Login", "Auth");
+        var username = HttpContext.Session.GetString("user");
+        if (string.IsNullOrEmpty(username)) return RedirectToAction("Login", "Auth");
 
-        ViewBag.Username = user;
+        ViewBag.Username = username;
         return View();
     }
 
     [HttpPost]
     public IActionResult Signup(DateTime date)
     {
-        string user = HttpContext.Session.GetString("user");
+        var username = HttpContext.Session.GetString("user");
+        if (string.IsNullOrEmpty(username)) return RedirectToAction("Login", "Auth");
+
         if (date < DateTime.Today || (date == DateTime.Today && DateTime.Now.Hour >= 8))
         {
             ViewBag.Message = "Prijave so možne samo za prihodnje dni ali danes do 8:00!";
             return View("Index");
         }
 
-        var record = _db.MealSignups.FirstOrDefault(s => s.Username == user && s.Date == date);
-        if (record == null) _db.MealSignups.Add(new MealSignup { Username = user, Date = date, SignedUp = true });
-        else record.SignedUp = true;
-        _db.SaveChanges();
+        var user = _db.Users.FirstOrDefault(u => u.Username == username);
+        if (user == null)
+        {
+            ViewBag.Message = "Uporabnik ne obstaja!";
+            return View("Index");
+        }
 
+        var record = _db.MealSignups.FirstOrDefault(s => s.UserId == user.Id && s.Date == date);
+        if (record == null)
+            _db.MealSignups.Add(new MealSignup { UserId = user.Id, Date = date, SignedUp = true });
+        else
+            record.SignedUp = true;
+
+        _db.SaveChanges();
         ViewBag.Message = "Uspešno prijavljen!";
         return View("Index");
     }
@@ -39,28 +51,47 @@ public class HomeController : Controller
     [HttpPost]
     public IActionResult Unsignup(DateTime date)
     {
-        string user = HttpContext.Session.GetString("user");
+        var username = HttpContext.Session.GetString("user");
+        if (string.IsNullOrEmpty(username)) return RedirectToAction("Login", "Auth");
+
         if (date < DateTime.Today || (date == DateTime.Today && DateTime.Now.Hour >= 8))
         {
             ViewBag.Message = "Odjave so možne samo za prihodnje dni ali danes do 8:00!";
             return View("Index");
         }
 
-        var record = _db.MealSignups.FirstOrDefault(s => s.Username == user && s.Date == date);
-        if (record == null) _db.MealSignups.Add(new MealSignup { Username = user, Date = date, SignedUp = false });
-        else record.SignedUp = false;
-        _db.SaveChanges();
+        var user = _db.Users.FirstOrDefault(u => u.Username == username);
+        if (user == null)
+        {
+            ViewBag.Message = "Uporabnik ne obstaja!";
+            return View("Index");
+        }
 
+        var record = _db.MealSignups.FirstOrDefault(s => s.UserId == user.Id && s.Date == date);
+        if (record == null)
+            _db.MealSignups.Add(new MealSignup { UserId = user.Id, Date = date, SignedUp = false });
+        else
+            record.SignedUp = false;
+
+        _db.SaveChanges();
         ViewBag.Message = "Uspešno odjavljen!";
         return View("Index");
     }
 
     public IActionResult MySignups()
     {
-        string user = HttpContext.Session.GetString("user");
-        if (string.IsNullOrEmpty(user)) return RedirectToAction("Login", "Auth");
+        var username = HttpContext.Session.GetString("user");
+        if (string.IsNullOrEmpty(username)) return RedirectToAction("Login", "Auth");
 
-        var signups = _db.MealSignups.Where(s => s.Username == user).OrderBy(s => s.Date).ToList();
+        var user = _db.Users.FirstOrDefault(u => u.Username == username);
+        if (user == null) return RedirectToAction("Login", "Auth");
+
+        var signups = _db.MealSignups
+            .Where(s => s.UserId == user.Id)
+            .OrderBy(s => s.Date)
+            .Include(s => s.User) // èe želiš uporabniške podatke v View
+            .ToList();
+
         return View(signups);
     }
 }
