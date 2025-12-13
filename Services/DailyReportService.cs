@@ -17,14 +17,30 @@ namespace LunchApp.Services
 
         protected override async Task ExecuteAsync(CancellationToken stoppingToken)
         {
+            // Preberi environment variable za testni način
+            bool testMode = Environment.GetEnvironmentVariable("TEST_EMAIL_MODE") == "true";
+
             while (!stoppingToken.IsCancellationRequested)
             {
                 var now = DateTime.Now;
 
-                if (now.Hour == 8 && now.Minute == 1 && _lastSent.Date != now.Date)
+                if (testMode)
                 {
-                    await SendReport();
-                    _lastSent = now;
+                    // ✅ Test: pošlje ob zagonu (enkrat na dan)
+                    if (_lastSent.Date != now.Date)
+                    {
+                        await SendReport();
+                        _lastSent = now;
+                    }
+                }
+                else
+                {
+                    // ✅ Produkcija: pošlje ob 8:01
+                    if (now.Hour == 8 && now.Minute == 1 && _lastSent.Date != now.Date)
+                    {
+                        await SendReport();
+                        _lastSent = now;
+                    }
                 }
 
                 await Task.Delay(TimeSpan.FromMinutes(1), stoppingToken);
