@@ -17,14 +17,14 @@ builder.Services.AddSession(options =>
     options.Cookie.IsEssential = true;
 });
 
-// Data Protection – shrani ključe za session, da deluje tudi po redeployu
+// Data Protection – shrani ključe za session
 builder.Services.AddDataProtection()
-    .PersistKeysToFileSystem(new DirectoryInfo(@"/app/keys")) // Docker / Render mapa
+    .PersistKeysToFileSystem(new DirectoryInfo(@"/app/keys"))
     .SetApplicationName("LunchApp");
 
 // SQLite DbContext
 builder.Services.AddDbContext<AppDbContext>(options =>
-    options.UseSqlite("Data Source=lunchapp.db"));
+    options.UseSqlite("Data Source=/app/lunchapp.db"));
 
 // Servisi
 builder.Services.AddSingleton<EmailService>();
@@ -43,7 +43,7 @@ app.UseHttpsRedirection();
 app.UseStaticFiles();
 app.UseRouting();
 
-app.UseSession();      // ⚠️ PRED Authorization
+app.UseSession();      // ⚠️ mora biti PRED Authorization
 app.UseAuthorization();
 
 // Default route
@@ -58,7 +58,7 @@ using (var scope = app.Services.CreateScope())
     db.Database.EnsureCreated();
 }
 
-// Za Docker / Render: poskrbi, da mapa za ključe obstaja
+// Poskrbi, da mapa za Data Protection obstaja
 if (!Directory.Exists("/app/keys"))
 {
     Directory.CreateDirectory("/app/keys");

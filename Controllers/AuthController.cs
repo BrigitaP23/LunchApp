@@ -3,57 +3,86 @@ using LunchApp.Models;
 using Microsoft.AspNetCore.Mvc;
 using System.Linq;
 
-public class AuthController : Controller
+namespace LunchApp.Controllers
 {
-    private readonly AppDbContext _db;
-    public AuthController(AppDbContext db) => _db = db;
-
-    public IActionResult Login() => View();
-
-    [HttpPost]
-    public IActionResult Login(string username, string password)
+    public class AuthController : Controller
     {
-        var user = _db.Users.FirstOrDefault(u => u.Username == username && u.Password == password);
-        if (user == null)
+        private readonly AppDbContext _db;
+
+        public AuthController(AppDbContext db)
         {
-            ViewBag.Error = "Napačno uporabniško ime ali geslo";
-            return View();
+            _db = db;
         }
 
-        HttpContext.Session.SetString("user", username);
-        return RedirectToAction("Index", "Home");
-    }
+        // GET: /Auth/Login
+        public IActionResult Login() => View();
 
-    public IActionResult Register() => View();
-
-    [HttpPost]
-    public IActionResult Register(string firstName, string lastName, string password)
-    {
-        if (string.IsNullOrEmpty(firstName) || string.IsNullOrEmpty(lastName) || string.IsNullOrEmpty(password))
+        // POST: /Auth/Login
+        [HttpPost]
+        public IActionResult Login(string username, string password)
         {
-            ViewBag.Error = "Vsa polja so obvezna!";
-            return View();
+            if (string.IsNullOrEmpty(username) || string.IsNullOrEmpty(password))
+            {
+                ViewBag.Error = "Vsa polja so obvezna!";
+                return View();
+            }
+
+            var user = _db.Users.FirstOrDefault(u => u.Username == username && u.Password == password);
+            if (user == null)
+            {
+                ViewBag.Error = "Napačno uporabniško ime ali geslo";
+                return View();
+            }
+
+            // Shrani uporabniško ime v session
+            HttpContext.Session.SetString("user", username);
+            return RedirectToAction("Index", "Home");
         }
 
-        string username = $"{firstName.ToLower()}.{lastName.ToLower()}";
+        // GET: /Auth/Register
+        public IActionResult Register() => View();
 
-        if (_db.Users.Any(u => u.Username == username))
+        // POST: /Auth/Register
+        [HttpPost]
+        public IActionResult Register(string firstName, string lastName, string password)
         {
-            ViewBag.Error = "Uporabnik s tem imenom že obstaja!";
-            return View();
+            if (string.IsNullOrEmpty(firstName) || string.IsNullOrEmpty(lastName) || string.IsNullOrEmpty(password))
+            {
+                ViewBag.Error = "Vsa polja so obvezna!";
+                return View();
+            }
+
+            // Sestavi uporabniško ime: ime.priimek
+            string username = $"{firstName.Trim().ToLower()}.{lastName.Trim().ToLower()}";
+
+            // Preveri, če uporabnik že obstaja
+            if (_db.Users.Any(u => u.Username == username))
+            {
+                ViewBag.Error = "Uporabnik s tem imenom že obstaja!";
+                return View();
+            }
+
+            // Ustvari novega uporabnika
+            var user = new User
+            {
+                FirstName = firstName.Trim(),
+                LastName = lastName.Trim(),
+                Username = username,
+                Password = password
+            };
+
+            _db.Users.Add(user);
+            _db.SaveChanges();
+
+            // Po registraciji uporabnika preusmeri na Login (ni samodejne prijave)
+            return RedirectToAction("Login");
         }
 
-        var user = new User { FirstName = firstName, LastName = lastName, Username = username, Password = password };
-        _db.Users.Add(user);
-        _db.SaveChanges();
-
-        HttpContext.Session.SetString("user", username);
-        return RedirectToAction("Index", "Home");
-    }
-
-    public IActionResult Logout()
-    {
-        HttpContext.Session.Remove("user");
-        return RedirectToAction("Login");
+        // Odjava
+        public IActionResult Logout()
+        {
+            HttpContext.Session.Remove("user");
+            return RedirectToAction("Login");
+        }
     }
 }
