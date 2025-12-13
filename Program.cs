@@ -1,4 +1,5 @@
 ﻿using LunchApp.Data;
+using LunchApp.Services;
 using Microsoft.EntityFrameworkCore;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -20,6 +21,8 @@ builder.Services.AddDbContext<AppDbContext>(options =>
 
 // (ZA KASNEJE – ko boš spet dodajala email)
 // builder.Services.AddHostedService<DailyReportService>();
+builder.Services.AddSingleton<EmailService>();
+builder.Services.AddHostedService<DailyReportService>();
 
 var app = builder.Build();
 

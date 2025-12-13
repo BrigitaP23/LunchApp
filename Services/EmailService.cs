@@ -1,33 +1,31 @@
-﻿using MimeKit; // MimeMessage, BodyBuilder
-using MailKit.Net.Smtp; // MailKit SmtpClient
-using MailKit.Security;
+﻿using System.Net;
+using System.Net.Mail;
 
 namespace LunchApp.Services
 {
     public class EmailService
     {
-        public void SendEmailWithAttachment(string toEmail, string subject, string body, string attachmentPath)
+        public void Send(string subject, string body, string attachmentPath)
         {
-            var message = new MimeMessage();
-            message.From.Add(new MailboxAddress("LunchApp", "brigitapertovt@gmail.com"));
-            message.To.Add(new MailboxAddress("", toEmail));
+            var message = new MailMessage();
+            message.From = new MailAddress("TVOJMAIL@gmail.com");
+            message.To.Add("brigitapertovt@gmail.com");
             message.Subject = subject;
-
-            var builder = new BodyBuilder { TextBody = body };
+            message.Body = body;
 
             if (!string.IsNullOrEmpty(attachmentPath))
-                builder.Attachments.Add(attachmentPath);
+                message.Attachments.Add(new Attachment(attachmentPath));
 
-            message.Body = builder.ToMessageBody();
-
-            // uporabi MailKit SmtpClient s polnim imenom
-            using (var client = new MailKit.Net.Smtp.SmtpClient())
+            var smtp = new SmtpClient("smtp.gmail.com", 587)
             {
-                client.Connect("smtp.gmail.com", 587, SecureSocketOptions.StartTls);
-                client.Authenticate("tvoj.email@gmail.com", "tvoje_app_password"); // Gmail app password
-                client.Send(message);
-                client.Disconnect(true);
-            }
+                Credentials = new NetworkCredential(
+                    Environment.GetEnvironmentVariable("EMAIL_USER"),
+                    Environment.GetEnvironmentVariable("EMAIL_PASS")
+                ),
+                EnableSsl = true
+            };
+
+            smtp.Send(message);
         }
     }
 }

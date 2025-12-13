@@ -1,20 +1,18 @@
-﻿using LunchApp.Models;
-using Microsoft.Extensions.Hosting;
-using System.Threading;
-using System.Threading.Tasks;
-using System.IO;
+﻿using Microsoft.Extensions.Hosting;
+using LunchApp.Data;
+using Microsoft.EntityFrameworkCore;
+using System.Text;
 
 namespace LunchApp.Services
 {
     public class DailyReportService : BackgroundService
     {
-        private readonly FileService fileService;
-        private readonly EmailService emailService;
+        private readonly IServiceProvider _services;
+        private DateTime _lastSent = DateTime.MinValue;
 
-        public DailyReportService(FileService fileService, EmailService emailService)
+        public DailyReportService(IServiceProvider services)
         {
-            this.fileService = fileService;
-            this.emailService = emailService;
+            _services = services;
         }
 
         protected override async Task ExecuteAsync(CancellationToken stoppingToken)
@@ -22,44 +20,45 @@ namespace LunchApp.Services
             while (!stoppingToken.IsCancellationRequested)
             {
                 var now = DateTime.Now;
-                var nextRun = new DateTime(now.Year, now.Month, now.Day, 8, 1, 0);
-                if (now > nextRun)
-                    nextRun = nextRun.AddDays(1);
 
-                var delay = nextRun - now;
-                await Task.Delay(delay, stoppingToken);
+                if (now.Hour == 8 && now.Minute == 1 && _lastSent.Date != now.Date)
+                {
+                    await SendReport();
+                    _lastSent = now;
+                }
 
-                SendDailyReport();
+                await Task.Delay(TimeSpan.FromMinutes(1), stoppingToken);
             }
         }
 
-        private void SendDailyReport()
+        private async Task SendReport()
         {
-            var today = DateTime.Today;
-            var signups = fileService.LoadSignups()
-                .Where(s => s.Date == today)
-                .ToList();
+            using var scope = _services.CreateScope();
+            var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+            var email = scope.ServiceProvider.GetRequiredService<EmailService>();
 
-            var filePath = Path.Combine("data", $"LunchReport_{today:yyyy-MM-dd}.csv");
-            using (var writer = new StreamWriter(filePath))
+            var today = DateTime.Today;
+
+            var data = await db.MealSignups
+                .Where(x => x.Date == today)
+                .ToListAsync();
+
+            var sb = new StringBuilder();
+            sb.AppendLine("Ime;Priimek;Uporabniško ime;Status");
+
+            foreach (var s in data)
             {
-                writer.WriteLine("Ime,Priimek,Username,Status");
-                foreach (var s in signups)
-                {
-                    var user = fileService.LoadUsers().FirstOrDefault(u => u.Username == s.Username);
-                    if (user != null)
-                    {
-                        string status = s.SignedUp ? "Prijavljen" : "Odjavljen";
-                        writer.WriteLine($"{user.FirstName},{user.LastName},{user.Username},{status}");
-                    }
-                }
+                var user = db.Users.First(u => u.Username == s.Username);
+                sb.AppendLine($"{user.FirstName};{user.LastName};{s.Username};{(s.SignedUp ? "PRIJAVLJEN" : "ODJAVLJEN")}");
             }
 
-            emailService.SendEmailWithAttachment(
-                "brigitapertovt@gmail.com",
-                $"Dnevni report kosil {today:yyyy-MM-dd}",
-                "V priponki je seznam prijav in odjav za današnji dan.",
-                filePath
+            var path = "/app/daily_report.csv";
+            File.WriteAllText(path, sb.ToString());
+
+            email.Send(
+                "Kosila – poročilo za danes",
+                $"Poročilo za {today:dd.MM.yyyy}",
+                path
             );
         }
     }
