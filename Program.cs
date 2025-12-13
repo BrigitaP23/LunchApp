@@ -6,10 +6,10 @@ using System.IO;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// MVC
+// 1️⃣ MVC
 builder.Services.AddControllersWithViews();
 
-// Session (za login)
+// 2️⃣ Session (za login)
 builder.Services.AddSession(options =>
 {
     options.IdleTimeout = TimeSpan.FromHours(8);
@@ -17,22 +17,27 @@ builder.Services.AddSession(options =>
     options.Cookie.IsEssential = true;
 });
 
-// Data Protection – shrani ključe za session
+// 3️⃣ Data Protection – shrani ključe za session
+var keysPath = "/app/keys";
+if (!Directory.Exists(keysPath))
+{
+    Directory.CreateDirectory(keysPath);
+}
 builder.Services.AddDataProtection()
-    .PersistKeysToFileSystem(new DirectoryInfo(@"/app/keys"))
+    .PersistKeysToFileSystem(new DirectoryInfo(keysPath))
     .SetApplicationName("LunchApp");
 
-// SQLite DbContext
+// 4️⃣ SQLite DbContext
 builder.Services.AddDbContext<AppDbContext>(options =>
     options.UseSqlite("Data Source=/app/lunchapp.db"));
 
-// Servisi
+// 5️⃣ Servisi (Email + Background service)
 builder.Services.AddSingleton<EmailService>();
 builder.Services.AddHostedService<DailyReportService>();
 
 var app = builder.Build();
 
-// Middleware
+// 6️⃣ Middleware
 if (!app.Environment.IsDevelopment())
 {
     app.UseExceptionHandler("/Home/Error");
@@ -43,25 +48,20 @@ app.UseHttpsRedirection();
 app.UseStaticFiles();
 app.UseRouting();
 
-app.UseSession();      // ⚠️ mora biti PRED Authorization
+// ⚠️ Session PRED Authorization
+app.UseSession();
 app.UseAuthorization();
 
-// Default route
+// 7️⃣ Default route
 app.MapControllerRoute(
     name: "default",
     pattern: "{controller=Auth}/{action=Login}/{id?}");
 
-// Ustvari DB ob zagonu
+// 8️⃣ Ustvari DB ob zagonu
 using (var scope = app.Services.CreateScope())
 {
     var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
     db.Database.EnsureCreated();
-}
-
-// Poskrbi, da mapa za Data Protection obstaja
-if (!Directory.Exists("/app/keys"))
-{
-    Directory.CreateDirectory("/app/keys");
 }
 
 app.Run();
