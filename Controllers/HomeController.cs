@@ -33,7 +33,7 @@ namespace LunchApp.Controllers
                 return View("Index");
             }
 
-            var user = _db.Users.Include(u => u.MealSignups).FirstOrDefault(u => u.Username == username);
+            var user = _db.User.Include(u => u.MealSignups).FirstOrDefault(u => u.Username == username);
             if (user == null) return RedirectToAction("Login", "Auth");
 
             var signup = user.MealSignups.FirstOrDefault(s => s.Date == date);
@@ -59,7 +59,7 @@ namespace LunchApp.Controllers
                 return View("Index");
             }
 
-            var user = _db.Users.Include(u => u.MealSignups).FirstOrDefault(u => u.Username == username);
+            var user = _db.User.Include(u => u.MealSignups).FirstOrDefault(u => u.Username == username);
             if (user == null) return RedirectToAction("Login", "Auth");
 
             var signup = user.MealSignups.FirstOrDefault(s => s.Date == date);
@@ -79,7 +79,7 @@ namespace LunchApp.Controllers
             var username = HttpContext.Session.GetString("user");
             if (string.IsNullOrEmpty(username)) return RedirectToAction("Login", "Auth");
 
-            var user = _db.Users.Include(u => u.MealSignups)
+            var user = _db.User.Include(u => u.MealSignups)
                                .FirstOrDefault(u => u.Username == username);
 
             return View(user?.MealSignups.OrderBy(s => s.Date).ToList());

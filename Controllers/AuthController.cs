@@ -15,7 +15,7 @@ namespace LunchApp.Controllers
         [HttpPost]
         public IActionResult Login(string username, string password)
         {
-            var user = _db.Users.FirstOrDefault(u => u.Username == username && u.Password == password);
+            var user = _db.User.FirstOrDefault(u => u.Username == username && u.Password == password);
             if (user == null)
             {
                 ViewBag.Error = "Napačno uporabniško ime ali geslo";
@@ -39,7 +39,7 @@ namespace LunchApp.Controllers
 
             string username = $"{firstName.ToLower()}.{lastName.ToLower()}";
 
-            if (_db.Users.Any(u => u.Username == username))
+            if (_db.User.Any(u => u.Username == username))
             {
                 ViewBag.Error = "Uporabnik s tem imenom že obstaja!";
                 return View();
@@ -53,7 +53,7 @@ namespace LunchApp.Controllers
                 Password = password
             };
 
-            _db.Users.Add(user);
+            _db.User.Add(user);
             _db.SaveChanges();
 
             HttpContext.Session.SetString("user", username);

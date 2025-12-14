@@ -39,7 +39,7 @@ namespace LunchApp.Services
 
             var today = DateTime.Today;
 
-            var data = await db.MealSignups
+            var data = await db.MealSignup
      .Include(ms => ms.User) // 🔹 naloži uporabnika
      .Where(x => x.Date == today)
      .ToListAsync();

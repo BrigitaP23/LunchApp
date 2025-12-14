@@ -19,7 +19,7 @@ namespace LunchApp.Controllers
         public IActionResult Index()
         {
             // 🔹 Naložimo vse uporabnike skupaj z njihovimi MealSignups
-            var users = _db.Users
+            var users = _db.User
                 .Include(u => u.MealSignups)
                 .OrderBy(u => u.LastName)
                 .ThenBy(u => u.FirstName)
