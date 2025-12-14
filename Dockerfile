@@ -2,25 +2,27 @@
 FROM mcr.microsoft.com/dotnet/sdk:8.0 AS build
 WORKDIR /app
 
-# Kopiramo vse datoteke iz repozitorija
+# Kopiraj vse datoteke
 COPY . .
 
-# Publish aplikacijo v Release
-RUN dotnet publish ./LunchApp.csproj -c Release -o /app/publish
+# Publish aplikacijo za linux-x64 runtime
+RUN dotnet publish LunchApp.csproj -c Release -o /app/publish -r linux-x64 --self-contained false /p:PublishTrimmed=false
 
 # 2️⃣ Runtime stage
 FROM mcr.microsoft.com/dotnet/aspnet:8.0
 WORKDIR /app
 
-# Ustvari mapo za Data Protection ključe
-RUN mkdir -p /app/keys
+# Ustvari mape za Data Protection in SQLite DB
+RUN mkdir -p /app/keys /app/data
 
-# Kopiramo rezultat builda iz prejšnje faze
+# Kopiraj publish iz build stage
 COPY --from=build /app/publish .
 
-# Nastavimo port za Render
+# Environment variables
 ENV ASPNETCORE_URLS=http://+:10000
+ENV DOTNET_RUNNING_IN_CONTAINER=true
+
 EXPOSE 10000
 
-# Zagon aplikacije
+# Start aplikacije
 ENTRYPOINT ["dotnet", "LunchApp.dll"]
