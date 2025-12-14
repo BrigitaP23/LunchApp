@@ -1,7 +1,10 @@
-﻿namespace LunchApp.Models
+﻿using System.ComponentModel.DataAnnotations;
+
+namespace LunchApp.Models
 {
     public class MealSignup
     {
+        [Key]
         public int Id { get; set; }
         public DateTime Date { get; set; }
         public bool SignedUp { get; set; }
