@@ -31,7 +31,17 @@ builder.Services.AddDataProtection()
 
 // ✅ Render PostgreSQL DbContext
 builder.Services.AddDbContext<AppDbContext>(options =>
-    options.UseNpgsql(builder.Configuration.GetConnectionString("RenderDb")));
+    options.UseSqlServer(
+        builder.Configuration.GetConnectionString("RenderDb"),
+        sqlOptions =>
+        {
+            sqlOptions.EnableRetryOnFailure(
+                maxRetryCount: 5,
+                maxRetryDelay: TimeSpan.FromSeconds(10),
+                errorNumbersToAdd: null);
+        }));
+
+
 
 // ✅ Servisi
 builder.Services.AddSingleton<EmailService>();

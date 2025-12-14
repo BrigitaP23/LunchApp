@@ -15,12 +15,12 @@ namespace LunchApp.Migrations
                 name: "Users",
                 columns: table => new
                 {
-                    Id = table.Column<int>(type: "INTEGER", nullable: false)
-                        .Annotation("Sqlite:Autoincrement", true),
-                    FirstName = table.Column<string>(type: "TEXT", nullable: false),
-                    LastName = table.Column<string>(type: "TEXT", nullable: false),
-                    Username = table.Column<string>(type: "TEXT", nullable: false),
-                    Password = table.Column<string>(type: "TEXT", nullable: false)
+                    Id = table.Column<int>(type: "int", nullable: false)
+                        .Annotation("SqlServer:Identity", "1, 1"),
+                    FirstName = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    LastName = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    Username = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    Password = table.Column<string>(type: "nvarchar(max)", nullable: false)
                 },
                 constraints: table =>
                 {
@@ -28,20 +28,20 @@ namespace LunchApp.Migrations
                 });
 
             migrationBuilder.CreateTable(
-                name: "MealSignups",
+                name: "MealSignup",
                 columns: table => new
                 {
-                    Id = table.Column<int>(type: "INTEGER", nullable: false)
-                        .Annotation("Sqlite:Autoincrement", true),
-                    Date = table.Column<DateTime>(type: "TEXT", nullable: false),
-                    SignedUp = table.Column<bool>(type: "INTEGER", nullable: false),
-                    UserId = table.Column<int>(type: "INTEGER", nullable: false)
+                    Id = table.Column<int>(type: "int", nullable: false)
+                        .Annotation("SqlServer:Identity", "1, 1"),
+                    Date = table.Column<DateTime>(type: "datetime2", nullable: false),
+                    SignedUp = table.Column<bool>(type: "bit", nullable: false),
+                    UserId = table.Column<int>(type: "int", nullable: false)
                 },
                 constraints: table =>
                 {
-                    table.PrimaryKey("PK_MealSignups", x => x.Id);
+                    table.PrimaryKey("PK_MealSignup", x => x.Id);
                     table.ForeignKey(
-                        name: "FK_MealSignups_Users_UserId",
+                        name: "FK_MealSignup_Users_UserId",
                         column: x => x.UserId,
                         principalTable: "Users",
                         principalColumn: "Id",
@@ -49,8 +49,8 @@ namespace LunchApp.Migrations
                 });
 
             migrationBuilder.CreateIndex(
-                name: "IX_MealSignups_UserId",
-                table: "MealSignups",
+                name: "IX_MealSignup_UserId",
+                table: "MealSignup",
                 column: "UserId");
         }
 
@@ -58,7 +58,7 @@ namespace LunchApp.Migrations
         protected override void Down(MigrationBuilder migrationBuilder)
         {
             migrationBuilder.DropTable(
-                name: "MealSignups");
+                name: "MealSignup");
 
             migrationBuilder.DropTable(
                 name: "Users");
